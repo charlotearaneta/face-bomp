@@ -1,1 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FaceBomp Game</title>
+    <style>
+        /* CSS included directly to avoid separate file */
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background: linear-gradient(to bottom, #00bfff, #0077b3);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            color: white;
+            text-align: center;
+            padding: 20px;
+            box-sizing: border-box;
+        }
 
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        button {
+            background-color: #006bb3;
+            border: none;
+            color: white;
+            padding: 12px 24px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            border-radius: 8px;
+            margin: 10px 0;
+            transition: all 0.3s;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+        }
+
+        button:hover {
+            background-color: #005699;
+            transform: translateY(-2px);
+        }
+
+        button:disabled {
+            background-color: #666;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        #score {
+            font-size: 32px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+
+        #timer {
+            font-size: 24px;
+            margin: 10px 0;
+            background-color: rgba(0, 0, 0, 0.2);
+            padding: 10px 20px;
+            border-radius: 8px;
+        }
+
+        .game-board {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+            max-width: 500px;
+            width: 100%;
+        }
+
+        .hole {
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            border-radius: 50%;
+            background-color: #005699;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+            box-shadow: inset 0px 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .hole img {
+            width: 70%;
+            height: 70%;
+            object-fit: contain;
+            transition: transform 0.2s ease-in-out;
+            border-radius: 50%;
+            transform: scale(0);
+            cursor: pointer;
+            position: absolute;
+        }
+
+        .hole.active img {
+            transform: scale(1);
+        }
+
+        .hole img.clicked {
+            border: 4px solid tomato;
+            box-sizing: border-box;
+        }
+
+        .instructions {
+            margin: 20px 0;
+            max-width: 500px;
+            background-color: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+        }
+
+        /* Responsive design */
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 2.5rem;
+            }
+            
+            .game-board {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 10px;
+            }
+            
+            #score, #timer {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>😉 FaceBomp</h1>
+    
+    <button id="startButton">Start Game</button>
+    <p id="score">Score: 0</p>
+    
+    <div id="timer">Time left: <span id="time">30</span></div>
+    
+    <div class="instructions">
+        <p>Click on the faces as they appear! You have 30 seconds to score as many points as possible.</p>
+    </div>
+    
+    <div class="game-board">
+        <div class="hole">
+            <img src="face.png" alt="Face" class="face">
+        </div>
+        <div class="hole">
+            <img src="face.png" alt="Face" class="face">
+        </div>
+        <div class="hole">
+            <img src="face.png" alt="Face" class="face">
+        </div>
+        <div class="hole">
+            <img src="face.png" alt="Face" class="face">
+        </div>
+        <div class="hole">
+            <img src="face.png" alt="Face" class="face">
+        </div>
+        <div class="hole">
+            <img src="face.png" alt="Face" class="face">
+        </div>
+    </div>
+
+    <script>
+        // Selecting elements from the HTML
+        const startButton = document.getElementById("startButton");
+        const scoreDisplay = document.getElementById("score");
+        const timeDisplay = document.getElementById("time");
+        const holes = document.querySelectorAll(".hole");
+
+        let score = 0;
+        let time = 30;
+        let isPlaying = false;
+        let countdown;
+        let gameInterval;
+
+        // Function to generate a random time interval
+        function randomTime(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        // Function to display images in holes
+        function displayImage() {
+            // Clear any active images
+            holes.forEach(hole => {
+                hole.classList.remove("active");
+                const img = hole.querySelector("img");
+                img.classList.remove("clicked");
+            });
+
+            // Select a random hole
+            const randomHole = holes[Math.floor(Math.random() * holes.length)];
+            
+            // Display the image in the selected hole
+            randomHole.classList.add("active");
+
+            // Set a random time for the image to be displayed
+            const displayTime = randomTime(500, 1500);
+            
+            // After the set time, hide the image
+            setTimeout(() => {
+                randomHole.classList.remove("active");
+                
+                // Continue the game loop if still playing
+                if (isPlaying) {
+                    displayImage();
+                }
+            }, displayTime);
+        }
+
+        // Function to start the game
+        function startGame() {
+            score = 0;
+            time = 30;
+            isPlaying = true;
+            startButton.disabled = true;
+            startButton.textContent = "Playing...";
+
+            // Display the initial score and time
+            scoreDisplay.textContent = `Score: ${score}`;
+            timeDisplay.textContent = time;
+
+            // Clear any existing intervals
+            clearInterval(countdown);
+            clearTimeout(gameInterval);
+            
+            // Start the countdown timer
+            countdown = setInterval(() => {
+                time--;
+                timeDisplay.textContent = time;
+                
+                // End the game when time is up
+                if (time === 0) {
+                    endGame();
+                }
+            }, 1000);
+
+            // Start displaying images
+            displayImage();
+        }
+
+        // Function to end the game
+        function endGame() {
+            clearInterval(countdown);
+            clearTimeout(gameInterval);
+            isPlaying = false;
+            startButton.disabled = false;
+            startButton.textContent = "Start Game";
+            
+            // Hide all faces
+            holes.forEach(hole => {
+                hole.classList.remove("active");
+            });
+            
+            // Show final message
+            alert(`Game Over!\nYour score: ${score}\n\n${getMessage()}`);
+        }
+
+        // Event listener for the start button
+        startButton.addEventListener("click", startGame);
+
+        // Event listener for clicking on images
+        holes.forEach(hole => {
+            hole.addEventListener("click", () => {
+                if (hole.classList.contains("active") && isPlaying) {
+                    hole.classList.remove("active");
+                    score++;
+                    scoreDisplay.textContent = `Score: ${score}`;
+                    
+                    // Add a red border to the clicked image
+                    const image = hole.querySelector("img");
+                    image.classList.add("clicked");
+                    
+                    // Remove the red border after a short delay
+                    setTimeout(() => {
+                        image.classList.remove("clicked");
+                    }, 300);
+                }
+            });
+        });
+
+        // Function to get a fun message based on the score
+        function getMessage() {
+            if (score === 0) {
+                return "You blinked, didn't you?";
+            } else if (score < 10) {
+                return "Nice effort! Keep practicing!";
+            } else if (score < 20) {
+                return "You're getting good at this!";
+            } else {
+                return "Wow, you're a FaceBomp champion!";
+            }
+        }
+    </script>
+</body>
+</html>
